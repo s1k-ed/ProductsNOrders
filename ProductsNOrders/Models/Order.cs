@@ -3,7 +3,7 @@ using ProductsNOrders.Exceptions;
 
 namespace ProductsNOrders.Models;
 
-public record Order
+public class Order
 {
     public Guid Id { get; set; } = Guid.Empty;
     public List<ProductOrder> ProductOrders { get; set; } = default!;
@@ -11,18 +11,29 @@ public record Order
 
     public void RemoveProduct(Guid productId)
     {
-        var productOrder = ProductOrders.Find(x => x.Product.Id.Equals(productId))
+        var productOrder = ProductOrders.Find(x => x.ProductId.Equals(productId))
             ?? throw new NotFoundException($"Товар с id ({productId}) не найден в заказе ({Id})");
 
         if (productOrder.Amount > 1) productOrder.Amount--;
         else ProductOrders.Remove(productOrder);
     }
 
-    public void AddProduct(Product product)
+    public void AddProduct(Guid productId, int amount)
     {
-        var productOrder = ProductOrders.Find(x => x.Product.Id.Equals(product.Id))
-            ?? new ProductOrder() { Product = product, Amount = 0 };
+        var productOrder = ProductOrders.Find(x => x.ProductId.Equals(productId) && x.OrderId.Equals(Id));
 
-        productOrder.Amount++;
+        if (productOrder is null)
+        {
+            productOrder = new ProductOrder()
+            {
+                OrderId = Id,
+                ProductId = productId,
+                Amount = 0
+            };
+
+            ProductOrders.Add(productOrder);
+        }
+
+        productOrder.Amount += amount;
     }
 }
